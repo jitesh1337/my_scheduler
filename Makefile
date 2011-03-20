@@ -1,5 +1,5 @@
 SRCS =  mysched.c mytest.c
-INC = futex.h  futex_inline.h  myatomic.h  mythread.h  myqueue.h mymutex.h mycond.h
+INC = futex.h  futex_inline.h  myatomic.h  mythread.h  myqueue.h mymutex.h mycond.h mythread_priv.h
 OBJS = $(SRCS:.c=.o)
 LIB = mythread.a
 
@@ -18,7 +18,7 @@ lib: $(OBJS) $(INC)
 %.o: %.c $(INC)
 	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) -o $@ -c $<
 
-mytest: mysched.o $(LIB) $(INC)
+mytest: mysched.o mytest.o $(LIB) $(INC)
 	$(CC) -o mytest $(CFLAGS) $(EXTRA_CFLAGS) mysched.o mytest.o $(LIB)
 
 clean:

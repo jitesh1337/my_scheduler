@@ -76,6 +76,7 @@ int mythread_tryenter_kernel(void);
  * without allowing preemptions
  */
 void mythread_leave_kernel_nonpreemptive(void);
+void mythread_leave_kernel(void);
 
 /*
  * mythread_self - thread id of running thread

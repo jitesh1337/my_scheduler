@@ -1,28 +1,40 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <signal.h>
 
 #include <mythread.h>
+#include <mythread_priv.h>
 
 /* Number of threads to start */
-#define NTHREADS	1
+#define NTHREADS	2
+
 
 /* This function will first increment count by 50, yield. When it gets the 
  * control back, it will increment count again and then exit
  */
 void *thread_func(void *arg)
 {
-	int *count = (int *)arg;
+	int *count = (int *)arg, ret;
+	sigset_t mask;
+
+	sigemptyset(&mask);
+	sigaddset(&mask, SIGALRM);
+	if (*(int *)arg == 0)
+		ret = sigprocmask(SIG_BLOCK, &mask, NULL);
+	else
+		ret = sigprocmask(SIG_UNBLOCK, &mask, NULL);
+	DEBUG_PRINTF("BLOCKING signal status : %d\n", ret);
 
 	mythread_t me = mythread_self();
-	printf("In thread_func, I am: %ld\n", (long int)me->tid);
+	DEBUG_PRINTF("In thread_func, I am: %ld\n", (long int)me->tid);
 
 	*count = *count + 50;
-	printf("Thread %ld: Incremented count by 50 and will now yield\n", (long int)me->tid);
+	DEBUG_PRINTF("Thread %ld: Incremented count by 50 and will now yield\n", (long int)me->tid);
 	fflush(stdout);
 	//mythread_yield();
 	*count = *count + 50;
-	printf("Thread %ld: Incremented count by 50 and will now exit\n", (long int)me->tid);
+	DEBUG_PRINTF("Thread %ld: Incremented count by 50 and will now exit\n", (long int)me->tid);
 	fflush(stdout);
 
 	while(1);
@@ -40,21 +52,26 @@ int main()
 	int count[NTHREADS];
 	int i;
 	char *status;
+	sigset_t mask;
 
 	for (i = 0; i < NTHREADS; i++) {
 		count[i] = i;
 		mythread_create(&threads[i], NULL, thread_func, &count[i]);
 	}
 	
+	sigemptyset(&mask);
+	sigaddset(&mask, SIGALRM);
+	sigprocmask(SIG_UNBLOCK, &mask, NULL);
+
 	mythread_t me = mythread_self();
-	printf("In main_func, I am: %ld", (long int)me->tid);
+	DEBUG_PRINTF("In main_func, I am: %ld\n", (long int)me->tid);
 
 	for (i = 0; i < NTHREADS; i++) {
-		printf("Main: Will now wait for thread %ld. Yielding..\n", (long int)threads[i]->tid);
+		DEBUG_PRINTF("Main: Will now wait for thread %ld. Yielding..\n", (long int)threads[i]->tid);
 		mythread_join(threads[i], (void **)&status);
-		printf("Main: Thread %ld exited and increment count to %d\n", (long int)threads[i]->tid, count[i]);
+		DEBUG_PRINTF("Main: Thread %ld exited and increment count to %d\n", (long int)threads[i]->tid, count[i]);
 	}
-	printf("Main: All threads completed execution. Will now exit..\n");
+	DEBUG_PRINTF("Main: All threads completed execution. Will now exit..\n");
 	mythread_exit(NULL);
 
 	return 0;
