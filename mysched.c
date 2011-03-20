@@ -10,10 +10,11 @@
 
 #include <sys/syscall.h>
 #include <sys/types.h>
+#include <sys/time.h>
 
 static void signal_handler(int sig)
 {
-	DEBUG_PRINTF("I am: %ld\n", (long int)syscall(SYS_gettid));
+	DEBUG_PRINTF("I am: %ld ", (long int)syscall(SYS_gettid));
 
 	if ( sig == SIGALRM ) {
 		DEBUG_PRINTF("Received Alarm Signal! \n");
@@ -31,6 +32,10 @@ struct sigaction old_sig_act;
 void mythread_init_sched()
 {
 	sigset_t mask;
+	struct itimerval timer;
+	struct timeval timerval;
+
+
 	memset(&sig_act, '\0', sizeof(sig_act));
 
 	sig_act.sa_handler = signal_handler;
@@ -50,6 +55,12 @@ void mythread_init_sched()
 		DEBUG_PRINTF("Exiting....");
 		exit(-1);
 	}
+
+	timerval.tv_sec = 3;
+	timerval.tv_usec = 0;
+	timer.it_interval = timerval;
+	timer.it_value = timerval;
+	setitimer(ITIMER_REAL, &timer, NULL);
 }
 
 void mythread_exit_sched()
