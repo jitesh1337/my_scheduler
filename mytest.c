@@ -15,16 +15,7 @@
  */
 void *thread_func(void *arg)
 {
-	int *count = (int *)arg, ret;
-	sigset_t mask;
-
-	sigemptyset(&mask);
-	sigaddset(&mask, SIGALRM);
-	if (*(int *)arg == 0)
-		ret = sigprocmask(SIG_BLOCK, &mask, NULL);
-	else
-		ret = sigprocmask(SIG_UNBLOCK, &mask, NULL);
-	DEBUG_PRINTF("BLOCKING signal status : %d\n", ret);
+	int *count = (int *)arg;
 
 	mythread_t me = mythread_self();
 	DEBUG_PRINTF("In thread_func, I am: %ld\n", (long int)me->tid);
@@ -53,6 +44,8 @@ int main()
 	int i;
 	char *status;
 	sigset_t mask;
+
+	mythread_setconcurrency(3);
 
 	for (i = 0; i < NTHREADS; i++) {
 		count[i] = i;
