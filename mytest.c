@@ -7,8 +7,9 @@
 #include <mythread_priv.h>
 
 /* Number of threads to start */
-#define NTHREADS	2
+#define NTHREADS	3
 
+struct futex printf_fut;
 
 /* This function will first increment count by 50, yield. When it gets the 
  * control back, it will increment count again and then exit
@@ -44,8 +45,10 @@ int main()
 	int i;
 	char *status;
 	sigset_t mask;
+	
+	futex_init(&printf_fut, 1);
 
-	mythread_setconcurrency(3);
+	mythread_setconcurrency(2);
 
 	for (i = 0; i < NTHREADS; i++) {
 		count[i] = i;

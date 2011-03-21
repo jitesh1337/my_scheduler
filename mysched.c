@@ -13,6 +13,8 @@
 #include <sys/types.h>
 #include <sys/time.h>
 
+void mythread_scheduler();
+
 void dump_queues()
 {
 	mythread_queue_t qptr, head;
@@ -43,11 +45,51 @@ void dump_queues()
 
 static void signal_handler(int sig)
 {
+	printf("\n");
 	dump_queues();
 	mythread_t self = mythread_self();
 	mythread_queue_t ptr, head;
 
-	if (sig == SIGALRM) {
+	head = *mythread_runq();
+	ptr = head;
+
+	if (ptr != NULL) {
+
+		self->reschedule = 1;
+
+		if ( mythread_tryenter_kernel() ) {
+
+			if (sig == SIGALRM) {
+	
+				DEBUG_PRINTF("Received Alarm Signal! %ld\n", (long int)syscall(SYS_gettid));
+
+				ptr = head;
+				do {
+					if (self != ptr->item) {
+						syscall(SYS_tkill, ((mythread_t)ptr->item)->tid, SIGUSR1);
+					}
+					ptr = ptr->next;
+				} while(ptr != head);
+
+				mythread_leave_kernel();
+
+			}
+			else if (sig == SIGUSR1) {
+
+				DEBUG_PRINTF("Received User Signal! %ld\n", (long int)syscall(SYS_gettid));
+
+				self->preemptions = self->preemptions + 1;
+				mythread_leave_kernel();
+
+			}
+		}
+		else {
+			DEBUG_PRINTF("enter_kernel() failed!! %ld\n", (long int)syscall(SYS_gettid));
+		}
+	}
+
+	/*if (sig == SIGALRM) {
+				
 		mythread_enter_kernel();
 		head = *mythread_runq();
 		ptr = head;
@@ -63,13 +105,38 @@ static void signal_handler(int sig)
 		DEBUG_PRINTF("Received Alarm Signal! %ld\n", (long int)syscall(SYS_gettid));
 	} else if (sig == SIGUSR1) {
 		DEBUG_PRINTF("Received User Signal! %ld\n", (long int)syscall(SYS_gettid));
-	}
+	}*/
 
-	/* mythread_enter_kernel();
+	/*mythread_enter_kernel();
 	mythread_unblock(mythread_readyq(), 0);
 
 	mythread_enter_kernel();
-	mythread_block(mythread_readyq(), 0); */
+	mythread_block(mythread_readyq(), 0);*/
+}
+
+void mythread_leave_kernel()
+{
+
+	mythread_t self = mythread_self();
+
+	if ( self->reschedule == 1 ) {
+		self->reschedule = 0;
+		mythread_scheduler();
+	}
+	else {
+        	mythread_leave_kernel_nonpreemptive();
+	}
+
+}
+
+void mythread_scheduler()
+{
+
+	mythread_unblock(mythread_readyq(), 0);
+
+	mythread_enter_kernel();
+	mythread_block(mythread_readyq(), 0);
+
 }
 
 struct sigaction sig_act;
@@ -122,7 +189,3 @@ void mythread_exit_sched()
 	}
 }
 
-void mythread_leave_kernel()
-{
-        mythread_leave_kernel_nonpreemptive();
-}
