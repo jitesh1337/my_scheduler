@@ -121,24 +121,30 @@ void mythread_leave_kernel()
 
 	mythread_t self = mythread_self();
 
+retry:
 	if (self->reschedule == 1) {
 		self->reschedule = 0;
 		if (mythread_scheduler() != 0)
 			mythread_leave_kernel_nonpreemptive();
+		else
+			mythread_block(mythread_readyq(), 0);
 	}
 	else {
         	mythread_leave_kernel_nonpreemptive();
 	}
 
+	if (self->reschedule == 1) {
+		 if (mythread_tryenter_kernel() == TRUE)
+			goto retry;
+	}
 }
 
 int mythread_scheduler()
 {
 	/* We are in the kernel already, don't worry about going in the kernel */
-	if (*mythread_readyq() != NULL) {
-		mythread_block(mythread_readyq(), 0);
+	if (*mythread_readyq() != NULL)
 		return 0;
-	} else 
+	else 
 		return -1;
 
 }
