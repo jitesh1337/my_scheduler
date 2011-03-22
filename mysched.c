@@ -13,7 +13,7 @@
 #include <sys/types.h>
 #include <sys/time.h>
 
-void mythread_scheduler();
+int mythread_scheduler();
 
 void dump_queues()
 {
@@ -46,7 +46,6 @@ void dump_queues()
 static void signal_handler(int sig)
 {
 	printf("\n");
-	dump_queues();
 	mythread_t self = mythread_self();
 	mythread_queue_t ptr, head;
 
@@ -57,8 +56,11 @@ static void signal_handler(int sig)
 
 		self->reschedule = 1;
 
-		if ( mythread_tryenter_kernel() ) {
+		//if ( mythread_tryenter_kernel() ) {
+		while(mythread_tryenter_kernel() == FALSE);
+		{
 
+			dump_queues();
 			if (sig == SIGALRM) {
 	
 				DEBUG_PRINTF("Received Alarm Signal! %ld\n", (long int)syscall(SYS_gettid));
@@ -83,9 +85,9 @@ static void signal_handler(int sig)
 
 			}
 		}
-		else {
+		/* else {
 			DEBUG_PRINTF("enter_kernel() failed!! %ld\n", (long int)syscall(SYS_gettid));
-		}
+		} */
 	}
 
 	/*if (sig == SIGALRM) {
@@ -119,9 +121,10 @@ void mythread_leave_kernel()
 
 	mythread_t self = mythread_self();
 
-	if ( self->reschedule == 1 ) {
+	if (self->reschedule == 1) {
 		self->reschedule = 0;
-		mythread_scheduler();
+		if (mythread_scheduler() != 0)
+			mythread_leave_kernel_nonpreemptive();
 	}
 	else {
         	mythread_leave_kernel_nonpreemptive();
@@ -129,13 +132,14 @@ void mythread_leave_kernel()
 
 }
 
-void mythread_scheduler()
+int mythread_scheduler()
 {
-
-	mythread_unblock(mythread_readyq(), 0);
-
-	mythread_enter_kernel();
-	mythread_block(mythread_readyq(), 0);
+	/* We are in the kernel already, don't worry about going in the kernel */
+	if (*mythread_readyq() != NULL) {
+		mythread_block(mythread_readyq(), 0);
+		return 0;
+	} else 
+		return -1;
 
 }
 
