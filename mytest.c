@@ -2,12 +2,13 @@
 #include <stdlib.h>
 #include <string.h>
 #include <signal.h>
+#include <sys/syscall.h>
 
 #include <mythread.h>
 #include <mythread_priv.h>
 
 /* Number of threads to start */
-#define NTHREADS	3
+#define NTHREADS	10
 
 struct futex printf_fut;
 
@@ -44,20 +45,20 @@ int main()
 	int count[NTHREADS];
 	int i;
 	char *status;
-	sigset_t mask;
+	//sigset_t mask;
+	mythread_t self;
 	
 	futex_init(&printf_fut, 1);
-
 	mythread_setconcurrency(2);
 
 	for (i = 0; i < NTHREADS; i++) {
 		count[i] = i;
 		mythread_create(&threads[i], NULL, thread_func, &count[i]);
+
+		/* This is done everytime, but it is ok, we are just blocking */
+		//sigfillset(&mask);
+		//sigprocmask(SIG_BLOCK, &mask, NULL);
 	}
-	
-	sigemptyset(&mask);
-	sigaddset(&mask, SIGALRM);
-	sigprocmask(SIG_UNBLOCK, &mask, NULL);
 
 	mythread_t me = mythread_self();
 	DEBUG_PRINTF("In main_func, I am: %ld\n", (long int)me->tid);
