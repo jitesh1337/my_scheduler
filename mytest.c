@@ -45,8 +45,6 @@ int main()
 	int count[NTHREADS];
 	int i;
 	char *status;
-	//sigset_t mask;
-	mythread_t self;
 	
 	futex_init(&printf_fut, 1);
 	mythread_setconcurrency(2);
@@ -54,10 +52,6 @@ int main()
 	for (i = 0; i < NTHREADS; i++) {
 		count[i] = i;
 		mythread_create(&threads[i], NULL, thread_func, &count[i]);
-
-		/* This is done everytime, but it is ok, we are just blocking */
-		//sigfillset(&mask);
-		//sigprocmask(SIG_BLOCK, &mask, NULL);
 	}
 
 	mythread_t me = mythread_self();

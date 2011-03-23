@@ -88,30 +88,6 @@ static void signal_handler(int sig)
 			DEBUG_PRINTF("enter_kernel() failed!! %ld\n", (long int)syscall(SYS_gettid));
 		} 
 	}
-	/*if (sig == SIGALRM) {
-				
-		mythread_enter_kernel();
-		head = *mythread_runq();
-		ptr = head;
-		if (ptr != NULL) {
-			do {
-				if (self != ptr->item) {
-					syscall(SYS_tkill, ((mythread_t)ptr->item)->tid, SIGUSR1);
-				}
-				ptr = ptr->next;
-			} while(ptr != head);
-		}
-		mythread_leave_kernel();
-		DEBUG_PRINTF("Received Alarm Signal! %ld\n", (long int)syscall(SYS_gettid));
-	} else if (sig == SIGUSR1) {
-		DEBUG_PRINTF("Received User Signal! %ld\n", (long int)syscall(SYS_gettid));
-	}*/
-
-	/*mythread_enter_kernel();
-	mythread_unblock(mythread_readyq(), 0);
-
-	mythread_enter_kernel();
-	mythread_block(mythread_readyq(), 0);*/
 }
 
 void mythread_leave_kernel()
@@ -179,7 +155,7 @@ void mythread_init_sched()
 		exit(-1);
 	}
 
-	timerval.tv_sec = 3;
+	timerval.tv_sec = 0;
 	timerval.tv_usec = 9999;
 	timer.it_interval = timerval;
 	timer.it_value = timerval;
