@@ -100,7 +100,7 @@ retry:
 	if (self->reschedule == 1) {
 		self->reschedule = 0;
 		printf("State: %d %ld\n", self->state & SLEEPING, (long int)self->tid);
-		if (self->state & SLEEPING) {
+		if (self->state & SLEEPING || mythread_inq(mythread_runq(), self) == FALSE) {
 			printf("non-Preemptive leave %ld\n", (long int)self->tid);
 			mythread_leave_kernel_nonpreemptive();
 		} else if (mythread_scheduler() != 0) {
