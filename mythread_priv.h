@@ -10,7 +10,9 @@
 
 extern struct futex printf_fut;
 
-#define DEBUG_PRINTF(...) futex_down(&printf_fut);  \
+/* #define DEBUG_PRINTF(...) futex_down(&printf_fut);  \
 			printf(__VA_ARGS__);  \
 			fflush(stdout);  \
-			futex_up(&printf_fut);
+			futex_up(&printf_fut); */
+
+#define DEBUG_PRINTF(...) printf(__VA_ARGS__);

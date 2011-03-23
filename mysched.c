@@ -45,7 +45,6 @@ void dump_queues()
 
 static void signal_handler(int sig)
 {
-	printf("\n");
 	mythread_t self = mythread_self();
 	mythread_queue_t ptr, head;
 
@@ -56,10 +55,11 @@ static void signal_handler(int sig)
 
 		self->reschedule = 1;
 
-		//if ( mythread_tryenter_kernel() ) {
-		while(mythread_tryenter_kernel() == FALSE);
+		printf("Now competing for kernel %ld\n", (long int)syscall(SYS_gettid));
+		//while(mythread_tryenter_kernel() == FALSE);
+		if(mythread_tryenter_kernel() == TRUE)
 		{
-
+			printf("Got lock %ld\n", (long int)syscall(SYS_gettid));
 			dump_queues();
 			if (sig == SIGALRM) {
 	
@@ -84,12 +84,10 @@ static void signal_handler(int sig)
 				mythread_leave_kernel();
 
 			}
-		}
-		/* else {
+		} else {
 			DEBUG_PRINTF("enter_kernel() failed!! %ld\n", (long int)syscall(SYS_gettid));
-		} */
+		} 
 	}
-
 	/*if (sig == SIGALRM) {
 				
 		mythread_enter_kernel();
@@ -118,7 +116,6 @@ static void signal_handler(int sig)
 
 void mythread_leave_kernel()
 {
-
 	mythread_t self = mythread_self();
 
 retry:
@@ -126,10 +123,12 @@ retry:
 		self->reschedule = 0;
 		if (mythread_scheduler() != 0)
 			mythread_leave_kernel_nonpreemptive();
-		else
+		else {
 			mythread_block(mythread_readyq(), 0);
+		}
 	}
 	else {
+		printf("Leaving without reschedule %ld %ld\n", (long int)self->tid, (long int)syscall(SYS_gettid));
         	mythread_leave_kernel_nonpreemptive();
 	}
 
@@ -181,7 +180,7 @@ void mythread_init_sched()
 	}
 
 	timerval.tv_sec = 3;
-	timerval.tv_usec = 0;
+	timerval.tv_usec = 9999;
 	timer.it_interval = timerval;
 	timer.it_value = timerval;
 	setitimer(ITIMER_REAL, &timer, NULL);
