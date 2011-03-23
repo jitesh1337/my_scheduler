@@ -151,20 +151,21 @@ int mythread_scheduler()
 struct sigaction sig_act;
 struct sigaction old_sig_act;
 
+sigset_t newmask;
+sigset_t oldmask;
+
 void mythread_init_sched()
 {
-	sigset_t mask;
 	struct itimerval timer;
 	struct timeval timerval;
 
 	memset(&sig_act, '\0', sizeof(sig_act));
 	sig_act.sa_handler = signal_handler;
-	sigemptyset(&sig_act.sa_mask);
-	sigaddset(&sig_act.sa_mask, SIGALRM);
-	sigaddset(&sig_act.sa_mask, SIGUSR1);
 
-	sigemptyset(&mask);
-	sigprocmask(SIG_SETMASK, &mask, NULL);
+	sigemptyset(&newmask);
+	sigaddset(&newmask, SIGALRM);
+	sigaddset(&newmask, SIGUSR1);
+	sigprocmask(SIG_UNBLOCK, &newmask, &oldmask);
 
 	if (sigaction(SIGALRM, &sig_act, &old_sig_act) == -1) {
 		DEBUG_PRINTF("Error in registering the Signal Handler for SIGALRM!\n");
@@ -187,16 +188,20 @@ void mythread_init_sched()
 
 void mythread_exit_sched()
 {
-	if (sigaction(SIGALRM, &old_sig_act, &sig_act) == -1) {
-		DEBUG_PRINTF("Error in removing the Signal Handler for SIGALRM!\n");
-		DEBUG_PRINTF("Exiting....\n");
-		exit(-1);
-	}
 
 	if (sigaction(SIGUSR1, &old_sig_act, &sig_act) == -1) {
 		DEBUG_PRINTF("Error in removing the signal handler for SIGUSR1!\n");
 		DEBUG_PRINTF("Exiting....\n");
 		exit(-1);
 	}
+
+	if (sigaction(SIGALRM, &old_sig_act, &sig_act) == -1) {
+		DEBUG_PRINTF("Error in removing the Signal Handler for SIGALRM!\n");
+		DEBUG_PRINTF("Exiting....\n");
+		exit(-1);
+	}
+
+	sigprocmask(SIG_SETMASK, &oldmask, &newmask);
+
 }
 
