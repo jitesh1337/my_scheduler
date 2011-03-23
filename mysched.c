@@ -13,6 +13,8 @@
 #include <sys/types.h>
 #include <sys/time.h>
 
+#define SLEEPING	0x2
+
 int mythread_scheduler();
 
 void dump_queues()
@@ -97,10 +99,17 @@ void mythread_leave_kernel()
 retry:
 	if (self->reschedule == 1) {
 		self->reschedule = 0;
-		if (mythread_scheduler() != 0)
+		printf("State: %d %ld\n", self->state & SLEEPING, (long int)self->tid);
+		if (self->state & SLEEPING) {
+			printf("non-Preemptive leave %ld\n", (long int)self->tid);
 			mythread_leave_kernel_nonpreemptive();
-		else {
-			mythread_block(mythread_readyq(), 0);
+		} else if (mythread_scheduler() != 0) {
+			printf("non-Preemptive leave %ld\n", (long int)self->tid);
+			mythread_leave_kernel_nonpreemptive();
+		} else {
+			printf("BLock %ld\n", (long int)self->tid);
+			mythread_block(mythread_readyq(), SLEEPING);
+			self->state &= (~SLEEPING);
 		}
 	}
 	else {
