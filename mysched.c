@@ -64,9 +64,7 @@ static void signal_handler(int sig)
 			printf("Got lock %ld\n", (long int)syscall(SYS_gettid));
 			dump_queues();
 			if (sig == SIGALRM) {
-	
 				DEBUG_PRINTF("Received Alarm Signal! %ld\n", (long int)syscall(SYS_gettid));
-
 				ptr = head;
 				do {
 					if (self != ptr->item) {
@@ -76,15 +74,9 @@ static void signal_handler(int sig)
 				} while(ptr != head);
 
 				mythread_leave_kernel();
-
-			}
-			else if (sig == SIGUSR1) {
-
+			} else if (sig == SIGUSR1) {
 				DEBUG_PRINTF("Received User Signal! %ld\n", (long int)syscall(SYS_gettid));
-
-				self->preemptions = self->preemptions + 1;
 				mythread_leave_kernel();
-
 			}
 		} else {
 			DEBUG_PRINTF("enter_kernel() failed!! %ld\n", (long int)syscall(SYS_gettid));
@@ -108,6 +100,7 @@ retry:
 			mythread_leave_kernel_nonpreemptive();
 		} else {
 			printf("BLock %ld\n", (long int)self->tid);
+			self->preemptions = self->preemptions + 1;
 			mythread_block(mythread_readyq(), SLEEPING);
 			self->state &= (~SLEEPING);
 		}
