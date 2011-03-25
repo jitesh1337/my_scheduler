@@ -54,13 +54,17 @@ static void signal_handler(int sig)
 	ptr = head;
 
 	if (ptr != NULL) {
-
 		self->reschedule = 1;
 
-		printf("Now competing for kernel %ld\n", (long int)syscall(SYS_gettid));
-		//while(mythread_tryenter_kernel() == FALSE);
+		if (sig == SIGALRM)
+			printf("Now competing for kernel. SIGALRM %ld\n", (long int)syscall(SYS_gettid));
+		else	
+			printf("Now competing for kernel. SIGUSR1 %ld\n", (long int)syscall(SYS_gettid));
 		if(mythread_tryenter_kernel() == TRUE)
 		{
+			if (self->reschedule == 0)
+				mythread_leave_kernel_nonpreemptive();
+
 			printf("Got lock %ld\n", (long int)syscall(SYS_gettid));
 			dump_queues();
 			if (sig == SIGALRM) {
