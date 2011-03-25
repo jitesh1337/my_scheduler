@@ -21,8 +21,11 @@ lib: $(OBJS) $(INC)
 mytest: $(OBJS) $(LIB) $(INC)
 	$(CC) -o mytest $(CFLAGS) $(EXTRA_CFLAGS) $(OBJS) $(LIB)
 
+mytest-2: mytest-2.o mysched.o $(LIB) $(INC)
+	$(CC) -o mytest-2 $(CFLAGS) $(EXTRA_CFLAGS) mytest-2.o mysched.o $(LIB)
+
 clean:
-	rm -f $(OBJS) mytest *~
+	rm -f $(OBJS) mytest mytest-2 *~
 tags:
 	find . -name "*.[cChH]" | xargs ctags
 	find . -name "*.[cChH]" | etags -

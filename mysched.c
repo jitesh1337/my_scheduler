@@ -15,7 +15,7 @@
 
 #define SLEEPING	0x2
 
-int mythread_scheduler();
+static inline int mythread_scheduler();
 
 void dump_queues()
 {
@@ -28,7 +28,7 @@ void dump_queues()
 	if (qptr != NULL) {
 		do {
 			tcb = (mythread_t)qptr->item;
-			DEBUG_PRINTF("%ld ", (long int)tcb->tid);
+			DEBUG_PRINTF("(%ld,%d) ", (long int)tcb->tid, tcb->preemptions);
 			qptr = qptr->next;
 		} while(qptr != head);
 	}
@@ -39,7 +39,7 @@ void dump_queues()
 	if (qptr != NULL) {
 		do {
 			tcb = (mythread_t)qptr->item;
-			DEBUG_PRINTF("%ld ", (long int)tcb->tid);
+			DEBUG_PRINTF("(%ld,%d) ", (long int)tcb->tid, tcb->preemptions);
 			qptr = qptr->next;
 		} while(qptr != head);
 	}
@@ -56,19 +56,19 @@ static void signal_handler(int sig)
 	if (ptr != NULL) {
 		self->reschedule = 1;
 
-		if (sig == SIGALRM)
-			printf("Now competing for kernel. SIGALRM %ld\n", (long int)syscall(SYS_gettid));
-		else	
-			printf("Now competing for kernel. SIGUSR1 %ld\n", (long int)syscall(SYS_gettid));
+		if (sig == SIGALRM) {
+			DEBUG_PRINTF("Now competing for kernel. SIGALRM %ld\n", (long int)self->tid);
+		} else	
+			printf("Now competing for kernel. SIGUSR1 %ld\n", (long int)self->tid);
 		if(mythread_tryenter_kernel() == TRUE)
 		{
 			if (self->reschedule == 0)
 				mythread_leave_kernel_nonpreemptive();
 
-			printf("Got lock %ld\n", (long int)syscall(SYS_gettid));
+			//printf("Got lock %ld\n", (long int)self->tid);
 			dump_queues();
 			if (sig == SIGALRM) {
-				DEBUG_PRINTF("Received Alarm Signal! %ld\n", (long int)syscall(SYS_gettid));
+				DEBUG_PRINTF("Received Alarm Signal! %ld\n", (long int)self->tid);
 				ptr = head;
 				do {
 					if (self != ptr->item) {
@@ -79,11 +79,11 @@ static void signal_handler(int sig)
 
 				mythread_leave_kernel();
 			} else if (sig == SIGUSR1) {
-				DEBUG_PRINTF("Received User Signal! %ld\n", (long int)syscall(SYS_gettid));
+				DEBUG_PRINTF("Received User Signal! %ld\n", (long int)self->tid);
 				mythread_leave_kernel();
 			}
 		} else {
-			DEBUG_PRINTF("enter_kernel() failed!! %ld\n", (long int)syscall(SYS_gettid));
+			DEBUG_PRINTF("enter_kernel() failed!! %ld\n", (long int)self->tid);
 		} 
 	}
 }
@@ -97,20 +97,20 @@ retry:
 		self->reschedule = 0;
 		printf("State: %d %ld\n", self->state & SLEEPING, (long int)self->tid);
 		if (self->state & SLEEPING || mythread_inq(mythread_runq(), self) == FALSE) {
-			printf("non-Preemptive leave %ld\n", (long int)self->tid);
+			//printf("non-Preemptive leave %ld\n", (long int)self->tid);
 			mythread_leave_kernel_nonpreemptive();
 		} else if (mythread_scheduler() != 0) {
-			printf("non-Preemptive leave %ld\n", (long int)self->tid);
+			//printf("non-Preemptive leave %ld\n", (long int)self->tid);
 			mythread_leave_kernel_nonpreemptive();
 		} else {
-			printf("BLock %ld\n", (long int)self->tid);
+			//printf("BLock %ld\n", (long int)self->tid);
 			self->preemptions = self->preemptions + 1;
 			mythread_block(mythread_readyq(), SLEEPING);
 			self->state &= (~SLEEPING);
 		}
 	}
 	else {
-		printf("Leaving without reschedule %ld %ld\n", (long int)self->tid, (long int)syscall(SYS_gettid));
+		//printf("Leaving without reschedule %ld %ld\n", (long int)self->tid, (long int)self->tid);
         	mythread_leave_kernel_nonpreemptive();
 	}
 
@@ -120,7 +120,7 @@ retry:
 	}
 }
 
-int mythread_scheduler()
+static inline int mythread_scheduler()
 {
 	/* We are in the kernel already, don't worry about going in the kernel */
 	if (*mythread_readyq() != NULL)

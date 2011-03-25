@@ -18,7 +18,7 @@ typedef struct mythread_mutex {
   mythread_queue_t q;
   //#ifndef MYTHREAD_SPIN
   mythread_t tail;          /* end of MCS queue */
-  struct mythread *locknext /* head pointer of MCS lock queue */
+  struct mythread *locknext; /* head pointer of MCS lock queue */
   //#endif
 } mythread_mutex_t;
 
@@ -43,4 +43,4 @@ int mythread_mutex_unlock(mythread_mutex_t *lock);
  */
 int mythread_mutex_destroy(mythread_mutex_t *lock);
 
-#endif MYMUTEX_H
+#endif
