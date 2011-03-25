@@ -14,8 +14,10 @@
 #include <sys/time.h>
 
 #define SLEEPING	0x2
+#define IN_SIGALRM	0x4
+#define	IN_SIGUSR1	0x8
 
-static inline int mythread_scheduler();
+static int mythread_scheduler();
 
 void dump_queues()
 {
@@ -48,12 +50,14 @@ void dump_queues()
 static void signal_handler(int sig)
 {
 	mythread_t self = mythread_self();
-	mythread_queue_t ptr, head;
-
-	head = *mythread_runq();
-	ptr = head;
+	mythread_queue_t ptr;
+	ptr = *mythread_runq();
 
 	if (ptr != NULL) {
+		if (sig == SIGALRM)
+			self->state |= IN_SIGALRM;
+		else
+			self->state |= IN_SIGUSR1;
 		self->reschedule = 1;
 
 		if (sig == SIGALRM) {
@@ -69,13 +73,6 @@ static void signal_handler(int sig)
 			dump_queues();
 			if (sig == SIGALRM) {
 				DEBUG_PRINTF("Received Alarm Signal! %ld\n", (long int)self->tid);
-				ptr = head;
-				do {
-					if (self != ptr->item) {
-						syscall(SYS_tkill, ((mythread_t)ptr->item)->tid, SIGUSR1);
-					}
-					ptr = ptr->next;
-				} while(ptr != head);
 
 				mythread_leave_kernel();
 			} else if (sig == SIGUSR1) {
@@ -120,9 +117,25 @@ retry:
 	}
 }
 
-static inline int mythread_scheduler()
+static int mythread_scheduler()
 {
+	mythread_queue_t ptr, head;
+	mythread_t self = mythread_self();
 	/* We are in the kernel already, don't worry about going in the kernel */
+
+	if (self->state & IN_SIGALRM) {
+		head = *mythread_runq();
+		ptr = head;
+		do {
+			if (self != ptr->item) {
+				syscall(SYS_tkill, ((mythread_t)ptr->item)->tid, SIGUSR1);
+			}
+			ptr = ptr->next;
+		} while(ptr != head); 
+	}
+	self->state &= ~IN_SIGALRM;
+	self->state &= ~IN_SIGUSR1;
+
 	if (*mythread_readyq() != NULL)
 		return 0;
 	else 
