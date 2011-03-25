@@ -1,3 +1,14 @@
+#Single Author info:
+# 	(All of us contributed equal share)
+#	jhshah  Jitesh H  Shah
+#	sskanitk Salil S Kanitkar
+#	msinha	Mukul Sinha
+#Group info:
+#      jhshah     Jitesh H Shah
+#      sskanitk  Salil S Kanitkar
+#	msinha	Mukul Sinha
+
+
 SRCS =  mysched.c mytest.c
 INC = futex.h  futex_inline.h  myatomic.h  mythread.h  myqueue.h mymutex.h mycond.h mythread_priv.h
 OBJS = $(SRCS:.c=.o)
