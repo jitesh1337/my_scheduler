@@ -1,3 +1,14 @@
+/* Single Author info:
+ * 	(All of us contributed equal share)
+ *	jhshah  Jitesh H  Shah
+ *	sskanitk Salil S Kanitkar
+ *	msinha	Mukul Sinha
+ * Group info:
+ *      jhshah     Jitesh H Shah
+ *      sskanitk  Salil S Kanitkar
+ *	msinha	Mukul Sinha
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -5,34 +16,49 @@
 #include <sys/syscall.h>
 
 #include <mythread.h>
+#include <mymutex.h>
 #include <mythread_priv.h>
+#include <limits.h>
 
 /* Number of threads to start */
 #define NTHREADS	10
+#define SETCONCURRENCY	2
+
+#define MYLIMIT	50000
 
 struct futex printf_fut;
+mythread_mutex_t mymutex;
+int gcount = 0;
 
 /* This function will first increment count by 50, yield. When it gets the 
  * control back, it will increment count again and then exit
  */
 void *thread_func(void *arg)
 {
-	int *count = (int *)arg;
+	int count = *(int *)arg;
+	mythread_t self = mythread_self();
+	int i;
 
-	mythread_t me = mythread_self();
-	DEBUG_PRINTF("In thread_func, I am: %ld\n", (long int)me->tid);
+	while(1) {
+		mythread_mutex_lock(&mymutex);
+		if (gcount < MYLIMIT) {
+			/* Delay to encourage preemptions */
+			for(i = 0; i < INT_MAX/1000; i++);
+			gcount += 50;
+			mythread_mutex_unlock(&mymutex);
+		} else {
+			mythread_mutex_unlock(&mymutex);
+			break;
+		}
+	}
 
-	*count = *count + 50;
-	DEBUG_PRINTF("Thread %ld: Incremented count by 50 and will now yield\n", (long int)me->tid);
-	fflush(stdout);
-	//mythread_yield();
-	*count = *count + 50;
-	DEBUG_PRINTF("Thread %ld: Incremented count by 50 and will now exit\n", (long int)me->tid);
-	fflush(stdout);
+	mythread_mutex_lock(&mymutex);
+	printf("My preemption counter [%ld]: %d\n", (long int)self->tid, self->preemptions);
+	mythread_mutex_unlock(&mymutex);
 
-	while(1);
+	if (count % 2)
+		mythread_exit(0);
 
-	mythread_exit(NULL);
 	return NULL;
 }
 
@@ -46,8 +72,10 @@ int main()
 	int i;
 	char *status;
 	
-	futex_init(&printf_fut, 1);
-	mythread_setconcurrency(2);
+	mythread_mutex_init(&mymutex, NULL);
+	mythread_setconcurrency(SETCONCURRENCY);
+
+	printf("NOTE: some prints might be mangled due to parallelism.\nWait for some time for the final output. It will appear :-)\n\n\n");
 
 	for (i = 0; i < NTHREADS; i++) {
 		count[i] = i;
@@ -55,14 +83,19 @@ int main()
 	}
 
 	mythread_t me = mythread_self();
-	DEBUG_PRINTF("In main_func, I am: %ld\n", (long int)me->tid);
+
+	mythread_mutex_lock(&mymutex);
+	printf("In main_func, I am: %ld\n", (long int)me->tid);
+	mythread_mutex_unlock(&mymutex);
 
 	for (i = 0; i < NTHREADS; i++) {
-		DEBUG_PRINTF("Main: Will now wait for thread %ld. Yielding..\n", (long int)threads[i]->tid);
+		mythread_mutex_lock(&mymutex);
+		printf("Main: Will now wait for thread %ld. Yielding..\n", (long int)threads[i]->tid);
+		mythread_mutex_unlock(&mymutex);
+
 		mythread_join(threads[i], (void **)&status);
-		DEBUG_PRINTF("Main: Thread %ld exited and increment count to %d\n", (long int)threads[i]->tid, count[i]);
 	}
-	DEBUG_PRINTF("Main: All threads completed execution. Will now exit..\n");
+	printf("Main: All threads completed execution.\nFinal count value:%d. \nWill now exit.\n", gcount);
 	mythread_exit(NULL);
 
 	return 0;
