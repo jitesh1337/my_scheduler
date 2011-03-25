@@ -174,6 +174,8 @@ struct sigaction old_sig_act;
 sigset_t newmask;
 sigset_t oldmask;
 
+static int timer_initialised = 0;
+
 /* init_sched */
 void mythread_init_sched()
 {
@@ -204,11 +206,14 @@ void mythread_init_sched()
 	sigprocmask(SIG_UNBLOCK, &newmask, &oldmask);
 
 	/* Start the timer */
-	timerval.tv_sec = 0;
-	timerval.tv_usec = 10000;
-	timer.it_interval = timerval;
-	timer.it_value = timerval;
-	setitimer(ITIMER_REAL, &timer, NULL);
+	if (timer_initialised == 0) {
+		timer_initialised = 1;
+		timerval.tv_sec = 0;
+		timerval.tv_usec = 10000;
+		timer.it_interval = timerval;
+		timer.it_value = timerval;
+		setitimer(ITIMER_REAL, &timer, NULL);
+	}
 }
 
 void mythread_exit_sched()

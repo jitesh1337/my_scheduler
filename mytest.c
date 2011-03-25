@@ -74,7 +74,7 @@ int main()
 	mythread_mutex_init(&mymutex, NULL);
 	mythread_setconcurrency(SETCONCURRENCY);
 
-	printf("NOTE: some prints might be mangled due to parallelism.\nWait for some time for the final output. It will appear :-)\n\n\n");
+	printf("\n\nNOTE: Wait for some time for the final output. It will appear :-)\n\n\n");
 
 	for (i = 0; i < NTHREADS; i++) {
 		count[i] = i;
