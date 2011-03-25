@@ -10,7 +10,7 @@
 
 
 SRCS =  mysched.c mytest.c
-INC = futex.h  futex_inline.h  myatomic.h  mythread.h  myqueue.h mymutex.h mycond.h mythread_priv.h
+INC = futex.h  futex_inline.h  myatomic.h  mythread.h  myqueue.h mymutex.h mycond.h
 OBJS = $(SRCS:.c=.o)
 LIB = mythread-new.a
 

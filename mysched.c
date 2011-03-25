@@ -18,7 +18,6 @@
 
 #include "mythread.h"
 #include <myqueue.h>
-#include <mythread_priv.h>
 
 #include <sys/syscall.h>
 #include <sys/types.h>
@@ -36,24 +35,24 @@ void dump_queues()
 	mythread_queue_t qptr, head;
 	mythread_t tcb;
 
-	DEBUG_PRINTF("Runq: ");
+	printf("Runq: ");
 	head = *mythread_runq();
 	qptr = head;
 	if (qptr != NULL) {
 		do {
 			tcb = (mythread_t)qptr->item;
-			DEBUG_PRINTF("(%ld,%d) ", (long int)tcb->tid, tcb->preemptions);
+			printf("(%ld,%d) ", (long int)tcb->tid, tcb->preemptions);
 			qptr = qptr->next;
 		} while(qptr != head);
 	}
 
-	DEBUG_PRINTF("  Readyq: ");
+	printf("  Readyq: ");
 	head = *mythread_readyq();
 	qptr = head;
 	if (qptr != NULL) {
 		do {
 			tcb = (mythread_t)qptr->item;
-			DEBUG_PRINTF("(%ld,%d) ", (long int)tcb->tid, tcb->preemptions);
+			printf("(%ld,%d) ", (long int)tcb->tid, tcb->preemptions);
 			qptr = qptr->next;
 		} while(qptr != head);
 	}
@@ -186,15 +185,15 @@ void mythread_init_sched()
 
 	/* Install SIGALRM and save old sigaction */
 	if (sigaction(SIGALRM, &sig_act, &old_sig_act) == -1) {
-		DEBUG_PRINTF("Error in registering the Signal Handler for SIGALRM!\n");
-		DEBUG_PRINTF("Exiting....");
+		printf("Error in registering the Signal Handler for SIGALRM!\n");
+		printf("Exiting....");
 		exit(-1);
 	}
 
 	/* Install SIGUSR1 and save old sigaction */
 	if (sigaction(SIGUSR1, &sig_act, &old_sig_act) == -1) {
-		DEBUG_PRINTF("Error in registering the Signal Handler for SIGUSR1!\n");
-		DEBUG_PRINTF("Exiting....");
+		printf("Error in registering the Signal Handler for SIGUSR1!\n");
+		printf("Exiting....");
 		exit(-1);
 	}
 
@@ -216,15 +215,15 @@ void mythread_exit_sched()
 {
 	/* Restore old SIGUSR1 handler */
 	if (sigaction(SIGUSR1, &old_sig_act, &sig_act) == -1) {
-		DEBUG_PRINTF("Error in removing the signal handler for SIGUSR1!\n");
-		DEBUG_PRINTF("Exiting....\n");
+		printf("Error in removing the signal handler for SIGUSR1!\n");
+		printf("Exiting....\n");
 		exit(-1);
 	}
 
 	/* Restore old SIGALRM handler */
 	if (sigaction(SIGALRM, &old_sig_act, &sig_act) == -1) {
-		DEBUG_PRINTF("Error in removing the Signal Handler for SIGALRM!\n");
-		DEBUG_PRINTF("Exiting....\n");
+		printf("Error in removing the Signal Handler for SIGALRM!\n");
+		printf("Exiting....\n");
 		exit(-1);
 	}
 

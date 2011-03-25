@@ -17,7 +17,6 @@
 
 #include <mythread.h>
 #include <mymutex.h>
-#include <mythread_priv.h>
 #include <limits.h>
 
 /* Number of threads to start */
