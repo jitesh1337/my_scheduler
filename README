@@ -1,0 +1,58 @@
+Aim:
+-----------------------------
+Implementation of unprioritized pre-emptive scheduling with wall clock time of 10ms 
+for the user level threads package mythread.
+
+
+Methods/Interface provided:
+-----------------------------
+1. mythread_init_sched()
+2. mythread_exit_sched()
+3. mythread_leave_kernel()
+4. mythread_scheduler()
+5. A signal handler
+
+Members:
+-------
+Jitesh Shah       - jhshah
+Salil Kanitkar    - sskanitk
+Mukul Sinha       - msinha
+
+How to Build:
+------------
+Our Makefile provides a bunch of targets; each one builds a particular part
+of the project.
+Refer to the following commands for building ->
+
+Compiling:
+
+     $ make
+# This is equivalent to "make all".
+# It compiles all the code files, creates the corresponding object files and builds
+# the incorporated test files viz. mytest
+
+Library Compilation:
+     $ make lib
+
+Cleaning:
+     $ make clean
+
+Test file:
+     $ make test
+
+Tags:
+     $ make tags
+# This target will create tags for both emacs and vim. We do not advertize any editor :-)
+
+Test Program
+-------------
+
+The mytest.c file provided with the implementation attempts to test the mysched.c functionality
+in presence of multiple threads, competing for a gloabl resource and synchronized through 
+mythread_mutex variable.
+
+We create 10 threads and Set the concurrency to 2 so as to trigger considerable amount of pre-emptions.
+Each thread, in turn, tries to acquire a mythread_mutex lock and if successful increments a global
+variable by 50, loops over for finite amount of time and then exits.
+The even numbered threads do an explicit exit whereas the odd numbered ones perform an implicit exit.
+
